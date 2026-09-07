@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import api from '../services/api.service';
 import {
   FiUser,
   FiMail,
@@ -11,9 +13,12 @@ import {
 } from 'react-icons/fi';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -61,6 +66,35 @@ export default function Register() {
     setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const { name, email, password, confirmPassword } = formData;
+
+    if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setPasswordError('');
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      await api('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+      });
+      navigate('/login');
+    } catch (error) {
+      setSubmitError(error.message || 'Unable to create the account. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#f8fafe] px-3 py-6 sm:p-4 overflow-x-hidden">
       <div className="bg-[linear-gradient(to_bottom,#000000_0%,#80808094_18%,#FFFFFF_100%)] p-6 sm:p-10 rounded-3xl shadow-sm w-full max-w-md box-border">
@@ -75,7 +109,7 @@ export default function Register() {
         </div>
 
         {/* Form */}
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Name */}
           <div>
@@ -195,13 +229,16 @@ export default function Register() {
           {passwordError && (
             <p className="text-xs text-red-600 font-medium mt-1">{passwordError}</p>
           )}
+          {submitError && <p className="text-xs text-red-600 font-medium mt-1">{submitError}</p>}
 
           {/* Create Account */}
           <button
             type="submit"
-            className="w-full py-4 bg-[#009FEF] text-white font-medium rounded-2xl hover:bg-[#028FEC] transition duration-200 shadow-lg shadow-indigo-600/30 mt-4"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            className="w-full py-4 bg-[#009FEF] text-white font-medium rounded-2xl hover:bg-[#028FEC] disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 shadow-lg shadow-indigo-600/30 mt-4"
           >
-            Create Account
+            {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

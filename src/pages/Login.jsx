@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import api from '../services/api.service';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Allowed password symbols (standard safe ASCII special characters)
   // Permitted: ! @ # $ % ^ & * ( ) _ + - = { } [ ] : ; , . ? / ~ ` |
@@ -50,6 +55,25 @@ export default function Login() {
     setShowPassword((prevState) => !prevState);
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (passwordError || password.length < 8) return;
+
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      navigate('/blogs');
+    } catch (error) {
+      setSubmitError(error.message || 'Unable to sign in. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 px-3 py-6 sm:p-4 overflow-x-hidden">
       <div className="bg-[linear-gradient(to_bottom,#000000_0%,#80808094_30%,#FFFFFF_100%)] p-6 sm:p-10 rounded-3xl shadow-sm w-full max-w-md box-border">
@@ -70,7 +94,7 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-gray-700 tracking-wider uppercase mb-2">
               EMAIL ADDRESS
@@ -128,11 +152,15 @@ export default function Login() {
             )}
           </div>
 
+          {submitError && <p className="text-xs text-red-600 font-medium">{submitError}</p>}
+
           <button 
             type="submit" 
-            className="w-full py-4 bg-[#009FEF] text-white font-medium rounded-2xl hover:bg-[#028FEC] transition duration-200 shadow-sm mt-2"
+            disabled={isSubmitting || Boolean(passwordError)}
+            aria-busy={isSubmitting}
+            className="w-full py-4 bg-[#009FEF] text-white font-medium rounded-2xl hover:bg-[#028FEC] disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 shadow-sm mt-2"
           >
-            Sign In
+            {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 

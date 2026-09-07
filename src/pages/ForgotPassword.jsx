@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { FiMail, FiLock } from 'react-icons/fi';
+import api from '../services/api.service';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Email handler: restricts input to valid email characters
   const handleEmailChange = (e) => {
@@ -13,11 +16,21 @@ export default function ForgotPassword() {
     setEmail(value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // After submitting the email, go to Verify Email page
-    navigate('/verify-email', { state: { email } });
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      await api('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      navigate('/verify-email', { state: { email } });
+    } catch (error) {
+      setSubmitError(error.message || 'Unable to send the reset link. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -82,10 +95,14 @@ export default function ForgotPassword() {
           {/* Send Reset Link */}
           <button
             type="submit"
-            className="w-full py-4 bg-[#009FEF] text-white font-semibold rounded-2xl hover:bg-[#028FEC] transition duration-200 shadow-lg shadow-indigo-600/30"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            className="w-full py-4 bg-[#009FEF] text-white font-semibold rounded-2xl hover:bg-[#028FEC] disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 shadow-lg shadow-indigo-600/30"
           >
-            Send Reset Link
+            {isSubmitting ? 'Sending...' : 'Send Reset Link'}
           </button>
+
+          {submitError && <p className="text-xs text-red-600 font-medium">{submitError}</p>}
 
           {/* Back to Sign In */}
           <a
