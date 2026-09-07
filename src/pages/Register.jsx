@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
-import api from '../services/api.service';
+import { register } from '../services/auth.service';
 import {
   FiUser,
   FiMail,
@@ -83,13 +83,10 @@ export default function Register() {
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      await api('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password }),
-      });
+      await register(name, email, password);
       navigate('/login');
     } catch (error) {
-      setSubmitError(error.message || 'Unable to create the account. Please try again.');
+      setSubmitError(error.response?.data?.message || error.message || 'Unable to create the account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

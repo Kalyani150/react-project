@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { FiMail, FiLock } from 'react-icons/fi';
-import api from '../services/api.service';
+import { forgotPassword } from '../services/auth.service';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -21,13 +21,10 @@ export default function ForgotPassword() {
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      await api('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
+      await forgotPassword(email);
       navigate('/verify-email', { state: { email } });
     } catch (error) {
-      setSubmitError(error.message || 'Unable to send the reset link. Please try again.');
+      setSubmitError(error.response?.data?.message || error.message || 'Unable to send the reset link. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

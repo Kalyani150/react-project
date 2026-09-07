@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
-import api from '../services/api.service';
+import { login } from '../services/auth.service';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -62,13 +62,10 @@ export default function Login() {
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      await api('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      await login(email, password);
       navigate('/blogs');
     } catch (error) {
-      setSubmitError(error.message || 'Unable to sign in. Please try again.');
+      setSubmitError(error.response?.data?.message || error.message || 'Unable to sign in. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
